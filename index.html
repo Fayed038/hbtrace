@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HBtrace — Location Check-in</title>
+<style>
+  :root{
+    --home:#1e88e5; --home-dark:#1565c0;
+    --sales:#e65100; --sales-dark:#bf360c;
+    --ok:#2e7d32; --err:#c62828; --bg:#f4f6f8; --card:#fff; --text:#222; --muted:#666;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:'Segoe UI',system-ui,Roboto,Arial,'Noto Sans Bengali',sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.4}
+  .wrap{max-width:480px;margin:0 auto;padding:16px 16px 40px}
+  header{text-align:center;padding:14px 0 6px}
+  header h1{margin:0;font-size:26px;letter-spacing:.5px;color:#111}
+  header .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .card{background:var(--card);border-radius:14px;padding:18px;margin-top:16px;
+    box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  label{display:block;font-weight:600;font-size:15px;margin:0 0 6px}
+  label .en{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+  input,textarea{width:100%;padding:14px;font-size:17px;border:1.5px solid #d0d5db;
+    border-radius:10px;margin-bottom:16px;background:#fff}
+  input:focus,textarea:focus{outline:none;border-color:var(--home)}
+  textarea{min-height:60px;resize:vertical}
+  .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    width:100%;padding:22px;font-size:20px;font-weight:700;color:#fff;border:none;
+    border-radius:14px;margin-bottom:14px;cursor:pointer;line-height:1.25}
+  .btn small{font-weight:500;font-size:14px;opacity:.95;margin-top:3px}
+  .btn:active{transform:scale(.99)}
+  .btn.home{background:var(--home)}.btn.home:active{background:var(--home-dark)}
+  .btn.sales{background:var(--sales)}.btn.sales:active{background:var(--sales-dark)}
+  .btn:disabled{opacity:.55}
+  .hint{font-size:12px;color:var(--muted);text-align:center;margin-top:2px}
+  /* overlay */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;
+    align-items:center;justify-content:center;padding:16px;z-index:10}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:16px;padding:22px;max-width:420px;width:100%;text-align:center}
+  .modal h2{margin:0 0 4px;font-size:20px}
+  .modal .en2{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .kv{background:#f4f6f8;border-radius:10px;padding:12px;text-align:left;font-size:14px;margin-bottom:8px}
+  .kv div{margin:3px 0}
+  .kv b{display:inline-block;min-width:96px;vertical-align:top}
+  .acc{font-size:12px;color:var(--muted);margin-bottom:16px}
+  .muted-i{color:var(--muted);font-style:italic}
+  #addrLine{word-break:break-word}
+  #addrLine b{min-width:96px}
+  .spin{width:42px;height:42px;border:4px solid #ddd;border-top-color:var(--home);
+    border-radius:50%;animation:sp 1s linear infinite;margin:10px auto}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .row{display:flex;gap:10px}
+  .row .btn{flex:1;padding:16px;font-size:17px}
+  .btn.grey{background:#607d8b}.btn.grey:active{background:#455a64}
+  .btn.green{background:var(--ok)}.btn.green:active{background:#1b5e20}
+  .big-ok{font-size:54px;line-height:1;margin:6px 0}
+  .msg-ok{color:var(--ok);font-weight:700;font-size:19px;margin:6px 0 2px}
+  .msg-err{color:var(--err);font-weight:700;font-size:18px;margin:6px 0}
+  .pill{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;
+    font-weight:700;color:#fff;margin-bottom:8px}
+  .pill.home{background:var(--home)}.pill.sales{background:var(--sales)}
+  .steps{text-align:left;background:#f4f6f8;border-radius:10px;padding:12px 12px 4px;margin:6px 0 16px}
+  .steps-title{font-weight:700;font-size:14px;margin:8px 0 4px}
+  .steps ol{margin:0 0 8px;padding-left:22px}
+  .steps li{font-size:14px;margin:0 0 8px}
+  .steps .en2{font-size:12px;margin:0}
+  .warn-note{text-align:left;background:#fff3e0;border:1px solid #ffb74d;border-radius:10px;
+    padding:10px 12px;margin:10px 0;font-size:14px;font-weight:600;color:#8a4b00}
+  .warn-note .en2{font-weight:400}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>HBtrace</h1>
+    <div class="sub">অবস্থান নিশ্চিত করুন • Location Check-in</div>
+  </header>
+
+  <div class="card">
+    <label>নাম <span class="en">Employee Name</span></label>
+    <input id="name" type="text" autocomplete="name" placeholder="আপনার নাম / Your name">
+
+    <label>পদবি <span class="en">Designation / Role</span></label>
+    <input id="designation" type="text" list="desigList" autocomplete="off" placeholder="যেমন TSO, AM, RSO — type or pick">
+    <datalist id="desigList">
+      <option value="TSO"></option>
+      <option value="ASO"></option>
+      <option value="SO"></option>
+      <option value="RSO"></option>
+      <option value="AM"></option>
+      <option value="RSM"></option>
+      <option value="ASM"></option>
+      <option value="DSR"></option>
+      <option value="SR"></option>
+      <option value="Distributor"></option>
+    </datalist>
+
+    <label>আইডি / মোবাইল নম্বর <span class="en">Employee ID / Mobile Number</span></label>
+    <input id="empid" type="text" inputmode="tel" autocomplete="off" placeholder="যেমন 01712345678">
+
+    <label>মন্তব্য (ঐচ্ছিক) <span class="en">Note (optional)</span></label>
+    <textarea id="note" placeholder="ডিপো নাম / মন্তব্য — Depot name / remark"></textarea>
+  </div>
+
+  <div class="card">
+    <button class="btn home" onclick="capture('HOME')">
+      🏠 আমি এখন বাসায় আছি
+      <small>I am at HOME now</small>
+    </button>
+    <button class="btn sales" onclick="capture('SALESPOINT')">
+      🏪 আমি এখন সেলসপয়েন্টে আছি
+      <small>I am at SALESPOINT now</small>
+    </button>
+    <p class="hint">বোতামে চাপ দিলে আপনার GPS অবস্থান নেওয়া হবে।<br>Tapping a button reads your GPS location.</p>
+  </div>
+</div>
+
+<!-- Overlay: capturing / confirm / submitting / result -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+/* ============================================================
+   HBtrace front-end
+   >>> After you deploy the Google Apps Script (later step),
+   >>> paste your Web App URL between the quotes below.
+   ============================================================ */
+var SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+
+var overlay = document.getElementById('overlay');
+var modal   = document.getElementById('modal');
+var pending = null; // {type, lat, lon, acc, address}
+var lastType = null;
+var awaitingPermission = false;   // true while showing the "blocked" recovery screen
+var permStatus = null;
+var blockedRetries = 0;           // how many times capture failed with PERMISSION_DENIED in a row
+
+// Simple prefixed logger so it's easy to spot in remote dev tools.
+function log(){
+  try{ console.log.apply(console, ['[HBtrace]'].concat([].slice.call(arguments))); }catch(e){}
+}
+
+// --- Auto-recovery: detect when the user grants location from settings ---
+if(navigator.permissions && navigator.permissions.query){
+  navigator.permissions.query({ name:'geolocation' }).then(function(status){
+    permStatus = status;
+    log('Permissions API available. Initial geolocation state =', status.state);
+    status.onchange = function(){
+      log('permission onchange fired. new state =', status.state, '| awaiting =', awaitingPermission);
+      if(status.state === 'granted' && awaitingPermission){
+        awaitingPermission = false;
+        doCapture(lastType);      // permission just granted — retry automatically
+      }
+    };
+  }).catch(function(e){ log('Permissions API query failed:', e); });
+} else {
+  log('Permissions API NOT available on this browser; manual Try Again only.');
+}
+// Also re-check when the user returns to the tab (e.g. back from Settings).
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible' && awaitingPermission &&
+     navigator.permissions && navigator.permissions.query){
+    navigator.permissions.query({ name:'geolocation' }).then(function(status){
+      log('visibilitychange re-check. state =', status.state);
+      if(status.state === 'granted'){
+        awaitingPermission = false;
+        doCapture(lastType);
+      }
+    }).catch(function(e){ log('visibility re-check query failed:', e); });
+  }
+});
+
+function labelFor(t){ return t === 'HOME' ? 'বাসা / HOME' : 'সেলসপয়েন্ট / SALESPOINT'; }
+function pillClass(t){ return t === 'HOME' ? 'home' : 'sales'; }
+function show(html){ modal.innerHTML = html; overlay.classList.add('show'); }
+function close(){ overlay.classList.remove('show'); pending = null; awaitingPermission = false; }
+
+function capture(type){
+  log('capture() called with type =', type);
+  blockedRetries = 0;   // fresh user-initiated attempt
+  var name = document.getElementById('name').value.trim();
+  var id   = document.getElementById('empid').value.trim();
+  if(!name || !id){
+    show('<h2>তথ্য দিন</h2><div class="en2">Please fill in your details</div>'+
+         '<p>নাম এবং আইডি/মোবাইল নম্বর দুটোই লিখুন।<br>Enter both Name and ID / Mobile Number.</p>'+
+         '<button class="btn grey" onclick="close()">ঠিক আছে / OK</button>');
+    return;
+  }
+  if(!navigator.geolocation){
+    show(errBox('এই ডিভাইসে GPS সমর্থিত নয়।','GPS is not supported on this device.'));
+    return;
+  }
+  lastType = type;
+  // First tap goes straight to the browser's native permission prompt (one tap).
+  doCapture(type);
+}
+
+function doCapture(type){
+  lastType = type;
+  log('doCapture() -> requesting getCurrentPosition for type =', type);
+  show('<h2>অবস্থান নেওয়া হচ্ছে…</h2><div class="en2">Getting your location…</div>'+
+       '<div class="spin"></div>'+
+       '<p class="hint">অনুমতি চাইলে "Allow" চাপুন।<br>If asked, tap "Allow".</p>');
+
+  navigator.geolocation.getCurrentPosition(function(pos){
+    log('getCurrentPosition SUCCESS. lat=', pos.coords.latitude,
+        'lon=', pos.coords.longitude, 'accuracy=', pos.coords.accuracy);
+    awaitingPermission = false;
+    blockedRetries = 0;
+    pending = {
+      type:type,
+      lat:pos.coords.latitude,
+      lon:pos.coords.longitude,
+      acc:pos.coords.accuracy,
+      address:null
+    };
+    confirmStep();
+    fetchAddress();
+  }, function(err){
+    log('getCurrentPosition ERROR. code =', err.code, '| message =', err.message,
+        '| permStatus =', (permStatus ? permStatus.state : 'n/a'));
+    if(err.code === 1){                      // PERMISSION_DENIED
+      awaitingPermission = true;
+      blockedRetries++;
+      log('PERMISSION_DENIED. blockedRetries =', blockedRetries);
+      show(permissionDeniedBox(blockedRetries > 1));
+      return;
+    }
+    var m = 'অবস্থান পাওয়া যায়নি।', e = 'Could not get location.';
+    if(err.code === 3){ m='সময় শেষ, আবার চেষ্টা করুন।'; e='Timed out. Please try again.'; }
+    show(errBox(m, e, false, true));
+  }, { enableHighAccuracy:true, timeout:20000, maximumAge:0 });
+}
+
+// Manual "Try Again": re-check the live permission state, log it, then re-attempt.
+function retryCapture(){
+  log('Try Again tapped. lastType =', lastType);
+  if(!lastType){ lastType = 'HOME'; }
+  if(navigator.permissions && navigator.permissions.query){
+    navigator.permissions.query({ name:'geolocation' }).then(function(s){
+      log('Live permission state on Try Again =', s.state);
+      doCapture(lastType);   // 'granted' works, 'prompt' re-prompts, 'denied' fails fast w/ clear note
+    }).catch(function(e){ log('retry perm query failed:', e); doCapture(lastType); });
+  } else {
+    doCapture(lastType);
+  }
+}
+
+// Shown when the browser has blocked location — step-by-step re-enable guide.
+// stillBlocked = true when the user tapped Try Again but permission is still denied.
+function permissionDeniedBox(stillBlocked){
+  var note = stillBlocked
+    ? '<div class="warn-note">⚠️ এখনো বন্ধ — সেটিংস এখনো পরিবর্তন হয়নি। আগে নিচের ধাপগুলো সম্পূর্ণ করুন, তারপর Try Again চাপুন।<br>'+
+      '<span class="en2">Still blocked — the setting hasn\'t changed yet. Complete the steps below first, then tap Try Again.</span></div>'
+    : '';
+  return (
+    '<h2 class="msg-err">⚠️ অবস্থানের অনুমতি বন্ধ</h2>'+
+    '<div class="en2">Location permission is blocked</div>'+
+    note+
+    '<p style="text-align:left">নিচের যেকোনো একটি উপায়ে অনুমতি চালু করুন — ফিরে এলে স্বয়ংক্রিয়ভাবে চেষ্টা করা হবে।<br>'+
+    '<span class="en2">Re-enable location using one of the methods below — it will retry automatically when you return.</span></p>'+
+
+    '<div class="steps">'+
+      '<div class="steps-title">📱 Chrome (Android)</div>'+
+      '<ol>'+
+        '<li>ঠিকানা বারের বাঁ পাশে <b>🔒 লক / ⓘ আইকন</b>-এ চাপ দিন<br>'+
+          '<span class="en2">Tap the <b>lock / ⓘ icon</b> left of the address bar</span></li>'+
+        '<li><b>Permissions</b> এ যান<br><span class="en2">Go to <b>Permissions</b></span></li>'+
+        '<li><b>Location</b> → <b>Allow</b> নির্বাচন করুন<br>'+
+          '<span class="en2">Select <b>Location → Allow</b></span></li>'+
+      '</ol>'+
+      '<div class="steps-title">⚙️ যদি উপরেরটা না দেখায় / Fallback (phone Settings)</div>'+
+      '<ol>'+
+        '<li><b>Settings</b> খুলুন<br><span class="en2">Open <b>Settings</b></span></li>'+
+        '<li><b>Apps → Chrome</b> (বা আপনার Browser)<br>'+
+          '<span class="en2"><b>Apps → Chrome</b> (or your Browser)</span></li>'+
+        '<li><b>Permissions → Location → Allow</b></li>'+
+        '<li>এই পেজে ফিরে আসুন<br><span class="en2">Return to this page</span></li>'+
+      '</ol>'+
+    '</div>'+
+
+    '<button class="btn green" onclick="retryCapture()">🔄 আবার চেষ্টা করুন<small>Try Again</small></button>'+
+    '<button class="btn grey" onclick="close()">বাতিল / Cancel</button>'
+  );
+}
+
+function confirmStep(){
+  var p = pending;
+  show(
+    '<span class="pill '+pillClass(p.type)+'">'+labelFor(p.type)+'</span>'+
+    '<h2>এটা কি ঠিক আছে?</h2><div class="en2">Please confirm before submitting</div>'+
+    '<div class="kv">'+
+      '<div><b>নাম / Name:</b> '+esc(val('name'))+'</div>'+
+      '<div><b>পদবি / Role:</b> '+esc(val('designation') || '—')+'</div>'+
+      '<div><b>আইডি / ID:</b> '+esc(val('empid'))+'</div>'+
+      '<div id="addrLine"><b>ঠিকানা / Address:</b> '+
+        (p.address ? esc(p.address) : '<span class="muted-i">লোড হচ্ছে… / loading…</span>')+'</div>'+
+      '<div><b>অক্ষাংশ / Lat:</b> '+p.lat.toFixed(6)+'</div>'+
+      '<div><b>দ্রাঘিমা / Lon:</b> '+p.lon.toFixed(6)+'</div>'+
+    '</div>'+
+    '<div class="acc">📍 নির্ভুলতা / Accuracy: ± '+Math.round(p.acc)+' m</div>'+
+    '<div class="row">'+
+      '<button class="btn grey" onclick="close()">বাতিল<small>Cancel</small></button>'+
+      '<button class="btn green" onclick="submit()">নিশ্চিত করুন<small>Confirm &amp; Submit</small></button>'+
+    '</div>'
+  );
+}
+
+// Reverse-geocode lat/lon -> address using OpenStreetMap Nominatim (free, no key).
+function fetchAddress(){
+  var p = pending;
+  if(!p) return;
+  var url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1'+
+            '&lat='+encodeURIComponent(p.lat)+'&lon='+encodeURIComponent(p.lon);
+  fetch(url, { headers:{ 'Accept':'application/json' } })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var addr = (d && d.display_name) ? d.display_name : null;
+      if(!pending) return;               // user cancelled meanwhile
+      pending.address = addr;
+      updateAddrLine(addr || '⚠️ ঠিকানা পাওয়া যায়নি / address unavailable');
+    })
+    .catch(function(){
+      if(!pending) return;
+      updateAddrLine('⚠️ ঠিকানা পাওয়া যায়নি / address unavailable');
+    });
+}
+function updateAddrLine(text){
+  var el = document.getElementById('addrLine');
+  if(el) el.innerHTML = '<b>ঠিকানা / Address:</b> '+esc(text);
+}
+
+function submit(){
+  var p = pending;
+  if(!p) return;
+  var payload = {
+    name: val('name'),
+    designation: val('designation'),
+    empId: val('empid'),
+    type: p.type,
+    lat: p.lat,
+    lon: p.lon,
+    accuracy: Math.round(p.acc),
+    address: p.address || '',
+    note: val('note'),
+    timestamp: new Date().toISOString()
+  };
+
+  show('<h2>পাঠানো হচ্ছে…</h2><div class="en2">Submitting…</div><div class="spin"></div>');
+
+  if(SCRIPT_URL === "PASTE_YOUR_APPS_SCRIPT_URL_HERE"){
+    // Backend not connected yet — demo success so you can test the flow.
+    setTimeout(function(){ successStep(p.type, true); }, 800);
+    return;
+  }
+
+  fetch(SCRIPT_URL, {
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
+  }).then(function(){
+    successStep(p.type, false);
+  }).catch(function(){
+    show(errBox('পাঠানো যায়নি, ইন্টারনেট চেক করে আবার চেষ্টা করুন।',
+                'Could not submit. Check your internet and try again.',
+                true));
+  });
+}
+
+function successStep(type, demo){
+  var loc = type === 'HOME' ? 'বাসার / HOME' : 'সেলসপয়েন্টের / SALESPOINT';
+  show(
+    '<div class="big-ok">✅</div>'+
+    '<div class="msg-ok">ধন্যবাদ! আপনার '+loc+' অবস্থান সংরক্ষণ করা হয়েছে।</div>'+
+    '<p>Thank you, your '+ (type==='HOME'?'HOME':'SALESPOINT') +' location has been saved.</p>'+
+    (demo ? '<p class="hint">(ডেমো মোড — এখনো Google Sheet যুক্ত হয়নি)<br>(Demo mode — backend not connected yet)</p>' : '')+
+    '<button class="btn green" onclick="reset()">সম্পন্ন / Done</button>'
+  );
+}
+
+function errBox(bn, en, retry, geoRetry){
+  var buttons;
+  if(retry){
+    buttons = '<div class="row"><button class="btn grey" onclick="close()">বাতিল<small>Cancel</small></button>'+
+              '<button class="btn green" onclick="submit()">আবার চেষ্টা<small>Retry</small></button></div>';
+  } else if(geoRetry){
+    buttons = '<div class="row"><button class="btn grey" onclick="close()">বাতিল<small>Cancel</small></button>'+
+              '<button class="btn green" onclick="retryCapture()">আবার চেষ্টা<small>Try Again</small></button></div>';
+  } else {
+    buttons = '<button class="btn grey" onclick="close()">ঠিক আছে / OK</button>';
+  }
+  return '<h2 class="msg-err">⚠️ ত্রুটি</h2>'+
+         '<p>'+bn+'<br><span class="en2">'+en+'</span></p>'+ buttons;
+}
+
+function reset(){
+  document.getElementById('note').value = '';
+  close();
+}
+function val(id){ return document.getElementById(id).value.trim(); }
+function esc(s){ return (s||'').replace(/[&<>"]/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+</script>
+</body>
+</html>
