@@ -21,9 +21,12 @@
     box-shadow:0 1px 4px rgba(0,0,0,.08)}
   label{display:block;font-weight:600;font-size:15px;margin:0 0 6px}
   label .en{display:block;font-weight:400;font-size:12px;color:var(--muted)}
-  input,textarea{width:100%;padding:14px;font-size:17px;border:1.5px solid #d0d5db;
-    border-radius:10px;margin-bottom:16px;background:#fff}
-  input:focus,textarea:focus{outline:none;border-color:var(--home)}
+  input,textarea,select{width:100%;padding:14px;font-size:17px;border:1.5px solid #d0d5db;
+    border-radius:10px;margin-bottom:16px;background:#fff;-webkit-appearance:none;appearance:none}
+  select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
+  select:disabled{background-color:#f0f0f0;color:#999}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--home)}
   textarea{min-height:60px;resize:vertical}
   .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;
     width:100%;padding:22px;font-size:20px;font-weight:700;color:#fff;border:none;
@@ -82,23 +85,34 @@
     <label>নাম <span class="en">Employee Name</span></label>
     <input id="name" type="text" autocomplete="name" placeholder="আপনার নাম / Your name">
 
-    <label>পদবি <span class="en">Designation / Role</span></label>
-    <input id="designation" type="text" list="desigList" autocomplete="off" placeholder="যেমন TSO, AM, RSO — type or pick">
-    <datalist id="desigList">
-      <option value="TSO"></option>
-      <option value="ASO"></option>
-      <option value="SO"></option>
-      <option value="RSO"></option>
-      <option value="AM"></option>
-      <option value="RSM"></option>
-      <option value="ASM"></option>
-      <option value="DSR"></option>
-      <option value="SR"></option>
-      <option value="Distributor"></option>
-    </datalist>
-
     <label>আইডি / মোবাইল নম্বর <span class="en">Employee ID / Mobile Number</span></label>
     <input id="empid" type="text" inputmode="tel" autocomplete="off" placeholder="যেমন 01712345678">
+
+    <label>পদবি <span class="en">Designation / Role</span></label>
+    <select id="designation" onchange="onDesignationChange()">
+      <option value="" selected disabled>— নির্বাচন করুন / Select —</option>
+    </select>
+
+    <div id="regionField" style="display:none">
+      <label>রিজিয়ন <span class="en">Region</span></label>
+      <select id="region">
+        <option value="" selected disabled>— নির্বাচন করুন / Select —</option>
+      </select>
+    </div>
+
+    <div id="areaField" style="display:none">
+      <label>এরিয়া <span class="en">Area</span></label>
+      <select id="area" onchange="onAreaChange()">
+        <option value="" selected disabled>— নির্বাচন করুন / Select —</option>
+      </select>
+    </div>
+
+    <div id="territoryField" style="display:none">
+      <label>টেরিটরি <span class="en">Territory</span></label>
+      <select id="territory" disabled>
+        <option value="" selected disabled>— আগে এরিয়া নির্বাচন করুন / Select Area first —</option>
+      </select>
+    </div>
 
     <label>মন্তব্য (ঐচ্ছিক) <span class="en">Note (optional)</span></label>
     <textarea id="note" placeholder="ডিপো নাম / মন্তব্য — Depot name / remark"></textarea>
@@ -129,6 +143,72 @@
    >>> paste your Web App URL between the quotes below.
    ============================================================ */
 var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgPUmSiKzvERlwIBTpQDzRap2igqPZmFCSJYDJHmo4rn_UG2VnEFSe-pI2T4_t7eJY/exec";
+
+/* ===== Area / Territory / Designation hierarchy (embedded, offline-ready) =====
+   Regenerated from the master hierarchy. To update, replace this HIER object. */
+var HIER = {"areas":[{"area":"Al Mizan Mohammed Nohel — Ctg Metro","region":"Ctg Metro","territories":["Asadgonj","Bondortila","C&B","Ctg Metro","Ferozsah","Halisohor","Oxygen","Riazuddin Bazar"]},{"area":"Md. Selim — Chakaria","region":"Chakaria","territories":["Alikadam","Aziznagar","Chakaria","Ctg Metro","Dulahazra","Lama","Rangamati","South"]},{"area":"Md. Arfan — Pekua","region":"Chakaria","territories":["Banshkhali","Kutubdia","Napora","Pekua"]},{"area":"Zillur Rahman — Moheshkhali","region":"Chakaria","territories":["Bodorkhali","Kalamarchora","Matarbari","Moheshkhali"]},{"area":"Akil Ahmed — Cox's Bazar","region":"Chakaria","territories":["Cox's Bazar","Eidgaon","Ramu","Ramu (Gorjoniya)"]},{"area":"Md. Mokbul — Moriccha","region":"Chakaria","territories":["Moriccha","Nilla","Samlapur","Teknaf","Thaingkhali"]},{"area":"Md. Faruk — Keranirhat","region":"Chakaria","territories":["Amirabad","Bandarban","Bangalhalia","Condonais","Keranirhat","Shatkania"]},{"area":"Abdur Razzaque — Potiya","region":"Chakaria","territories":["Anowara","Anowara (Botyoli)","Boalkhali","Canpur","Malgor","Potiya","Shantirhat"]},{"area":"Kabir Hossain — North Shondwip / Shondwip","region":"Chakaria","territories":["North Shondwip","S.Shondwip","Shondwip"]},{"area":"MD. Hasnat — Mirpur Area","region":"Dhaka Division","territories":["Dhaka Division","Dhanmondi","Mirpur","Mirpur Area","Pallabi","Samoli"]},{"area":"Abu Reza Al Mamun — Badda Area","region":"Dhaka Division","territories":["Badda","Badda Area","Mogbazar","Mugdha"]},{"area":"Abdul Mozid — Gazipur Area","region":"Dhaka Division","territories":["Ashulia","Gazipur","Gazipur Area","Pubail","Uttara"]},{"area":"MD Sumon — Manikgonj Area","region":"Dhaka Division","territories":["Manikgonj","Manikgonj Area","Nobabgonj"]},{"area":"Md. Golam Ahia — Narayangonj Area","region":"Dhaka Division","territories":["Fatullah","Munsigonj","Narayangonj Area","Sonargonj"]},{"area":"Motiur Rahaman — Sadarghat Area","region":"Dhaka Division","territories":["Kamragirchar","Sadarghat","Sadarghat Area","Zatrabari"]},{"area":"Md.Mamun Gazi — Rangamati Region","region":"Rangamati","territories":["Ghagra","Ichakhali","Juraichori","Kaptai","Maine","Moriom Nagar","Noapara","Rangamati","Rangamati Region","Shelok"]},{"area":"Shahiduzzaman — Jashore","region":"Jashore","territories":["Jashore","Magura","Narail","Navaron"]},{"area":"Sohel Rana — Jhenaidah, Cuadanga","region":"Jashore","territories":["Cuadanga","Dorsona","Jhenaidah","Jhenidah","Kaliganj","Mahespur"]},{"area":"Rashedul Islam — Kustia","region":"Jashore","territories":["Kustia","Meherpur","Veramara"]},{"area":"Md.Tajbir khan — Mymensingh Region","region":"Mymensingh","territories":["Bokshigonj","Durgapur","Gopalpur","Kotiadi","Modhupur","Mohangoj","Moktagach","Mymenshing","Mymensingh Region","Phulpur"]},{"area":"Mustafizur Rahman — Nakla/Sreebordi","region":"Mymensingh","territories":["Nakla","Sreebordi"]},{"area":"Abdur Razzaque — Sreepur/Bhaluka/Goforgaon/Kaliakoir","region":"Mymensingh","territories":["Bhaluka","Goforgaon","Goforgoan","Kaliakoir","Sreepur"]},{"area":"Nipendra.Ch.Sutradhar — Meladh/Islampur/Rajibpur","region":"Mymensingh","territories":["Islampur","Meladh","Rajibpur","Razibpur"]},{"area":"Amirul islam — Jamalpur/Sherpur","region":"Mymensingh","territories":["Jamalpur","Sherpur"]},{"area":"Deb Prasad Saha — North Division","region":"North Division","territories":["Bogura","Chatmohor","Gobindogonj","Joypurhat","North Division","Sherpur","Shirajgonj","Ullapara"]},{"area":"Md.Nurul Islam — Rongpur","region":"North Division","territories":["Dinajpur","Rajarhat","Rongpur"]},{"area":"Md Habibur Rahaman — Rajshahi","region":"North Division","territories":["Bagha","Chapainawabganj","Manda","Naogaon","Natore","Rajshahi","Shibgonj"]},{"area":"Md.Rafiqul Alam — Akhaura Region","region":"Akhaura","territories":["Akhaura","Akhaura Region","Companygong"]},{"area":"MD.Saiful Islam — Barisal,Bhola,Khulna,Madaripur,Faridpur","region":"Barishal & Madaripur","territories":["Barguna","Barisal","Barishal","Bhola","Faridpur","Gopalgonj","Gouronodi","Jhalokathi","Khulna","Madaripur","Muksudpur","Muladi","Patuakhali","Pirajpur","Shariatpur","Vadorganj"]},{"area":"Md. Abdul Latif Jony — Bhola, Charfasaion","region":"Barishal & Madaripur","territories":["Bhola","Charfasaion"]},{"area":"Sharif Rumi — Khulna, Bagerhat, Mongla, Chuknagar, Satkhira","region":"Barishal & Madaripur","territories":["Bagerhat","Chuknagar","Khulna","Mongla","Satkhira","Satkira"]},{"area":"Biplob kumar saha — Faridpur, Rajbari, Boalmari","region":"Barishal & Madaripur","territories":["Boalmari","Faridpur","Rajbari"]},{"area":"Md Burhan Uddin — Sylhet","region":"Sylhet","territories":["Aatgaram","Beanibazar","Gobindaganj","Hobigonj","Sreemongol","Sylhet","Vishwanath"]},{"area":"Najim uddin Faysal — Baraulekha","region":"Sylhet","territories":["Baraulekha"]},{"area":"MD.Mahabub — Sunamganj","region":"Sylhet","territories":["Sunamganj"]}],"designations":["AM","ASM","DMI","DMO","MI","RSM","RSO","Sr.RSM","Sr.TSO","TSI","TSO","TSS","WM"]};
+
+// Which data each designation must give (confirmed with DMD):
+//   region  -> give Region        area -> give Area        territory -> give Area + Territory
+var LEVEL = {
+  'WM':'region','RSM':'region','Sr.RSM':'region',
+  'AM':'area','ASM':'area','RSO':'area',
+  'TSO':'territory','Sr.TSO':'territory','TSS':'territory','TSI':'territory',
+  'MI':'territory','DMI':'territory','DMO':'territory'
+};
+
+// Fill Designation, Region, and Area dropdowns on load (Area grouped by Region).
+(function initDropdowns(){
+  var dsel = document.getElementById('designation');
+  HIER.designations.forEach(function(d){
+    var o = document.createElement('option'); o.value = d; o.textContent = d; dsel.appendChild(o);
+  });
+  var byRegion = {};
+  HIER.areas.forEach(function(a){ (byRegion[a.region] = byRegion[a.region] || []).push(a); });
+  // Region dropdown (distinct regions, in order).
+  var rsel = document.getElementById('region');
+  Object.keys(byRegion).forEach(function(reg){
+    var o = document.createElement('option'); o.value = reg; o.textContent = reg; rsel.appendChild(o);
+  });
+  // Area dropdown (grouped by region).
+  var asel = document.getElementById('area');
+  Object.keys(byRegion).forEach(function(reg){
+    var g = document.createElement('optgroup'); g.label = reg;
+    byRegion[reg].forEach(function(a){
+      var o = document.createElement('option'); o.value = a.area; o.textContent = a.area; g.appendChild(o);
+    });
+    asel.appendChild(g);
+  });
+})();
+
+// Show only the fields the selected designation must fill.
+function currentLevel(){ return LEVEL[document.getElementById('designation').value] || ''; }
+function onDesignationChange(){
+  var lvl = currentLevel();
+  document.getElementById('regionField').style.display    = (lvl === 'region')    ? 'block' : 'none';
+  document.getElementById('areaField').style.display      = (lvl === 'area' || lvl === 'territory') ? 'block' : 'none';
+  document.getElementById('territoryField').style.display = (lvl === 'territory') ? 'block' : 'none';
+}
+
+// When Area changes, fill Territory with only that Area's territories.
+function onAreaChange(){
+  var areaName = document.getElementById('area').value;
+  var tsel = document.getElementById('territory');
+  tsel.innerHTML = '';
+  var ph = document.createElement('option');
+  ph.value = ''; ph.textContent = '— নির্বাচন করুন / Select —'; ph.disabled = true; ph.selected = true;
+  tsel.appendChild(ph);
+  var area = null;
+  for (var i = 0; i < HIER.areas.length; i++){ if (HIER.areas[i].area === areaName){ area = HIER.areas[i]; break; } }
+  if (area){
+    area.territories.forEach(function(t){
+      var o = document.createElement('option'); o.value = t; o.textContent = t; tsel.appendChild(o);
+    });
+    tsel.disabled = false;
+  } else {
+    tsel.disabled = true;
+  }
+}
 
 var overlay = document.getElementById('overlay');
 var modal   = document.getElementById('modal');
@@ -181,11 +261,18 @@ function close(){ overlay.classList.remove('show'); pending = null; awaitingPerm
 function capture(type){
   log('capture() called with type =', type);
   blockedRetries = 0;   // fresh user-initiated attempt
-  var name = document.getElementById('name').value.trim();
-  var id   = document.getElementById('empid').value.trim();
-  if(!name || !id){
-    show('<h2>তথ্য দিন</h2><div class="en2">Please fill in your details</div>'+
-         '<p>নাম এবং আইডি/মোবাইল নম্বর দুটোই লিখুন।<br>Enter both Name and ID / Mobile Number.</p>'+
+  var name = val('name'), id = val('empid'), desig = val('designation');
+  var lvl = LEVEL[desig] || '';
+  var need = [];
+  if(!name)  need.push('নাম / Name');
+  if(!id)    need.push('মোবাইল / Mobile');
+  if(!desig) need.push('পদবি / Designation');
+  if(lvl === 'region' && !val('region')) need.push('রিজিয়ন / Region');
+  if((lvl === 'area' || lvl === 'territory') && !val('area')) need.push('এরিয়া / Area');
+  if(lvl === 'territory' && !val('territory')) need.push('টেরিটরি / Territory');
+  if(need.length){
+    show('<h2>তথ্য বাকি আছে</h2><div class="en2">Please complete these fields</div>'+
+         '<p>'+need.join('<br>')+'</p>'+
          '<button class="btn grey" onclick="close()">ঠিক আছে / OK</button>');
     return;
   }
@@ -289,6 +376,10 @@ function permissionDeniedBox(stillBlocked){
 
 function confirmStep(){
   var p = pending;
+  var loc = '';
+  if(val('region'))    loc += '<div><b>রিজিয়ন / Region:</b> '+esc(val('region'))+'</div>';
+  if(val('area'))      loc += '<div><b>এরিয়া / Area:</b> '+esc(val('area'))+'</div>';
+  if(val('territory')) loc += '<div><b>টেরিটরি / Territory:</b> '+esc(val('territory'))+'</div>';
   show(
     '<span class="pill '+pillClass(p.type)+'">'+labelFor(p.type)+'</span>'+
     '<h2>এটা কি ঠিক আছে?</h2><div class="en2">Please confirm before submitting</div>'+
@@ -296,6 +387,7 @@ function confirmStep(){
       '<div><b>নাম / Name:</b> '+esc(val('name'))+'</div>'+
       '<div><b>পদবি / Role:</b> '+esc(val('designation') || '—')+'</div>'+
       '<div><b>আইডি / ID:</b> '+esc(val('empid'))+'</div>'+
+      loc+
       '<div id="addrLine"><b>ঠিকানা / Address:</b> '+
         (p.address ? esc(p.address) : '<span class="muted-i">লোড হচ্ছে… / loading…</span>')+'</div>'+
       '<div><b>অক্ষাংশ / Lat:</b> '+p.lat.toFixed(6)+'</div>'+
@@ -340,6 +432,9 @@ function submit(){
     name: val('name'),
     designation: val('designation'),
     empId: val('empid'),
+    region: val('region'),
+    area: val('area'),
+    territory: val('territory'),
     type: p.type,
     lat: p.lat,
     lon: p.lon,
